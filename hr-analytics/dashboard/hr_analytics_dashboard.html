@@ -1,0 +1,475 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+.db{background:#0f1b4d;min-height:600px;border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+.topbar{background:#0a1238;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08)}
+.logo{display:flex;align-items:center;gap:10px;color:#fff;font-size:14px;font-weight:500}
+.logo i{font-size:20px;color:#7b96f5}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.topbar-right span{font-size:12px;color:rgba(255,255,255,0.5)}
+.topbar-right i{color:rgba(255,255,255,0.5);font-size:18px;cursor:pointer}
+.nav{background:#0d1540;display:flex;gap:2px;padding:0 20px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.nav-btn{background:none;border:none;color:rgba(255,255,255,0.45);font-size:12px;padding:12px 14px;cursor:pointer;border-bottom:2px solid transparent;display:flex;align-items:center;gap:6px;transition:color 0.15s;white-space:nowrap}
+.nav-btn i{font-size:14px}
+.nav-btn.active{color:#7b96f5;border-bottom-color:#7b96f5}
+.nav-btn:hover{color:rgba(255,255,255,0.8)}
+.page{display:none;padding:18px 20px;flex:1;overflow-y:auto;background:#0f1b4d}
+.page.active{display:block}
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
+.kpi{background:#162056;border-radius:10px;padding:14px 16px;border:1px solid rgba(255,255,255,0.07)}
+.kpi-label{font-size:10px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.kpi-label i{font-size:13px}
+.kpi-val{font-size:22px;font-weight:500;color:#fff}
+.kpi-sub{font-size:10px;margin-top:3px}
+.kpi-sub.up{color:#4ade80}.kpi-sub.down{color:#f87171}.kpi-sub.neu{color:rgba(255,255,255,0.35)}
+.charts-grid{display:grid;gap:12px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:2fr 1fr}
+.g31{grid-template-columns:1fr 2fr}
+.card{background:#162056;border-radius:10px;padding:16px;border:1px solid rgba(255,255,255,0.07)}
+.card-title{font-size:11px;font-weight:500;color:rgba(255,255,255,0.55);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:14px;display:flex;align-items:center;gap:6px}
+.card-title i{font-size:14px;color:#7b96f5}
+canvas{display:block}
+.bar-h{display:flex;flex-direction:column;gap:7px}
+.bar-row{display:grid;grid-template-columns:90px 1fr 38px;align-items:center;gap:8px}
+.bar-label{font-size:11px;color:rgba(255,255,255,0.6);text-align:right}
+.bar-track{background:rgba(255,255,255,0.07);border-radius:4px;height:16px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px}
+.bar-val{font-size:11px;color:rgba(255,255,255,0.7);font-weight:500}
+.donut-wrap{display:flex;align-items:center;gap:16px}
+.donut-legend{display:flex;flex-direction:column;gap:8px;flex:1}
+.legend-item{display:flex;align-items:center;gap:7px;font-size:11px;color:rgba(255,255,255,0.6)}
+.legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.legend-val{margin-left:auto;font-weight:500;color:rgba(255,255,255,0.85)}
+.matrix-wrap{overflow-x:auto}
+.matrix{width:100%;border-collapse:collapse;font-size:11px}
+.matrix th{color:rgba(255,255,255,0.4);font-weight:400;padding:5px 10px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.08)}
+.matrix td{padding:6px 10px;text-align:center;border-radius:4px;font-weight:500;font-size:12px}
+.matrix .row-label{text-align:left;color:rgba(255,255,255,0.6);font-weight:400}
+.heat-low{background:rgba(74,222,128,0.15);color:#4ade80}
+.heat-mid{background:rgba(251,191,36,0.15);color:#fbbf24}
+.heat-high{background:rgba(248,113,113,0.18);color:#f87171}
+.heat-crit{background:rgba(239,68,68,0.28);color:#ef4444}
+.stat-row{display:flex;justify-content:space-around;margin-bottom:14px}
+.stat-block{text-align:center}
+.stat-big{font-size:28px;font-weight:500;color:#fff}
+.stat-lbl{font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px}
+.risk-bar-wrap{display:flex;gap:6px;align-items:flex-end;height:70px;margin-bottom:8px}
+.risk-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.risk-bar-col .rb{width:100%;border-radius:4px 4px 0 0}
+.risk-bar-col .rl{font-size:9px;color:rgba(255,255,255,0.4)}
+.risk-bar-col .rv{font-size:11px;color:rgba(255,255,255,0.7);font-weight:500}
+.danger-tag{display:inline-flex;align-items:center;gap:4px;background:rgba(239,68,68,0.15);color:#f87171;font-size:10px;padding:3px 8px;border-radius:4px;border:1px solid rgba(239,68,68,0.25)}
+.warn-tag{display:inline-flex;align-items:center;gap:4px;background:rgba(251,191,36,0.12);color:#fbbf24;font-size:10px;padding:3px 8px;border-radius:4px;border:1px solid rgba(251,191,36,0.25)}
+.insight{background:rgba(123,150,245,0.08);border-left:3px solid #7b96f5;border-radius:0 6px 6px 0;padding:8px 12px;font-size:11px;color:rgba(255,255,255,0.6);line-height:1.5;margin-top:10px}
+.insight strong{color:#7b96f5}
+.page-title{font-size:14px;font-weight:500;color:#fff;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.page-title i{color:#7b96f5;font-size:16px}
+.gauge-row{display:flex;gap:10px;margin-bottom:12px}
+.gauge-card{flex:1;background:#1a2660;border-radius:8px;padding:12px;border:1px solid rgba(255,255,255,0.06)}
+.gauge-label{font-size:10px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px}
+.gauge-val{font-size:18px;font-weight:500}
+.gauge-track{background:rgba(255,255,255,0.07);height:4px;border-radius:2px;margin-top:6px;overflow:hidden}
+.gauge-fill{height:100%;border-radius:2px}
+</style>
+
+<div class="db">
+<div class="topbar">
+  <div class="logo">
+    <i class="ti ti-users-group" aria-hidden="true"></i>
+    <span>HR Analytics Dashboard</span>
+    <span style="font-size:10px;color:rgba(255,255,255,0.3);margin-left:6px">1,470 employees · FY2022</span>
+  </div>
+  <div class="topbar-right">
+    <span>Sam Akande Bolarinwa</span>
+    <i class="ti ti-bell" aria-hidden="true"></i>
+    <i class="ti ti-settings" aria-hidden="true"></i>
+    <i class="ti ti-user-circle" aria-hidden="true"></i>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="showPage('overview',this)"><i class="ti ti-layout-dashboard"></i>Overview</button>
+  <button class="nav-btn" onclick="showPage('workforce',this)"><i class="ti ti-building-community"></i>Workforce</button>
+  <button class="nav-btn" onclick="showPage('attrition',this)"><i class="ti ti-trending-down"></i>Attrition</button>
+  <button class="nav-btn" onclick="showPage('satisfaction',this)"><i class="ti ti-mood-smile"></i>Satisfaction</button>
+  <button class="nav-btn" onclick="showPage('performance',this)"><i class="ti ti-bolt"></i>Performance</button>
+  <button class="nav-btn" onclick="showPage('compensation',this)"><i class="ti ti-currency-dollar"></i>Compensation</button>
+</nav>
+
+<div id="page-overview" class="page active">
+  <div class="kpi-row">
+    <div class="kpi"><div class="kpi-label"><i class="ti ti-users" aria-hidden="true"></i>Total employees</div><div class="kpi-val">1,470</div><div class="kpi-sub neu">Since inception</div></div>
+    <div class="kpi"><div class="kpi-label"><i class="ti ti-user-check" aria-hidden="true"></i>Current headcount</div><div class="kpi-val">1,233</div><div class="kpi-sub up">▲ Active workforce</div></div>
+    <div class="kpi"><div class="kpi-label"><i class="ti ti-user-minus" aria-hidden="true"></i>Terminated</div><div class="kpi-val">237</div><div class="kpi-sub down">▼ Total departed</div></div>
+    <div class="kpi"><div class="kpi-label"><i class="ti ti-percentage" aria-hidden="true"></i>Termination rate</div><div class="kpi-val" style="color:#f87171">19.2%</div><div class="kpi-sub down">▼ Of headcount</div></div>
+    <div class="kpi"><div class="kpi-label"><i class="ti ti-coin" aria-hidden="true"></i>Total salary</div><div class="kpi-val" style="font-size:17px">$8.42M</div><div class="kpi-sub neu">Active employees</div></div>
+  </div>
+  <div class="charts-grid g2">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-building-community"></i>Headcount by department</div>
+      <div class="bar-h">
+        <div class="bar-row"><span class="bar-label">R&D</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:#2a78d6"></div></div><span class="bar-val">828</span></div>
+        <div class="bar-row"><span class="bar-label">Sales</span><div class="bar-track"><div class="bar-fill" style="width:42.8%;background:#1baf7a"></div></div><span class="bar-val">354</span></div>
+        <div class="bar-row"><span class="bar-label">HR</span><div class="bar-track"><div class="bar-fill" style="width:6.2%;background:#eda100"></div></div><span class="bar-val">51</span></div>
+      </div>
+      <div class="insight">R&D accounts for <strong>67.2%</strong> of total headcount — a product-driven org profile</div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-chart-donut"></i>Employment type</div>
+      <div class="donut-wrap">
+        <canvas id="donutEmp" width="110" height="110" role="img" aria-label="Employment type: 83.4% Full-time, 16.6% Contractor">Full-time 83.4%, Contractor 16.6%</canvas>
+        <div class="donut-legend">
+          <div class="legend-item"><span class="legend-dot" style="background:#2a78d6"></span>Full-time<span class="legend-val">1,028 · 83.4%</span></div>
+          <div class="legend-item"><span class="legend-dot" style="background:#eda100"></span>Contractor<span class="legend-val">205 · 16.6%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="charts-grid g2" style="margin-top:12px">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-trending-down"></i>Attrition rate by department</div>
+      <div class="bar-h">
+        <div class="bar-row"><span class="bar-label">Sales</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:#e34948"></div></div><span class="bar-val" style="color:#f87171">20.6%</span></div>
+        <div class="bar-row"><span class="bar-label">HR</span><div class="bar-track"><div class="bar-fill" style="width:92.2%;background:#e34948"></div></div><span class="bar-val" style="color:#f87171">19.0%</span></div>
+        <div class="bar-row"><span class="bar-label">R&D</span><div class="bar-track"><div class="bar-fill" style="width:67%;background:#eda100"></div></div><span class="bar-val" style="color:#fbbf24">13.8%</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-gender-bigender"></i>Gender split (active)</div>
+      <div class="donut-wrap">
+        <canvas id="donutGender" width="110" height="110" role="img" aria-label="Gender: 59.4% Male, 40.6% Female">Male 59.4%, Female 40.6%</canvas>
+        <div class="donut-legend">
+          <div class="legend-item"><span class="legend-dot" style="background:#2a78d6"></span>Male<span class="legend-val">732 · 59.4%</span></div>
+          <div class="legend-item"><span class="legend-dot" style="background:#e87ba4"></span>Female<span class="legend-val">501 · 40.6%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="page-workforce" class="page">
+  <div class="page-title"><i class="ti ti-building-community"></i>Workforce composition</div>
+  <div class="charts-grid g2">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-school"></i>Education level</div>
+      <div class="bar-h">
+        <div class="bar-row"><span class="bar-label">Bachelor</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:#2a78d6"></div></div><span class="bar-val">473</span></div>
+        <div class="bar-row"><span class="bar-label">Master</span><div class="bar-track"><div class="bar-fill" style="width:71.9%;background:#4a3aa7"></div></div><span class="bar-val">340</span></div>
+        <div class="bar-row"><span class="bar-label">College</span><div class="bar-track"><div class="bar-fill" style="width:50.3%;background:#1baf7a"></div></div><span class="bar-val">238</span></div>
+        <div class="bar-row"><span class="bar-label">Below Col.</span><div class="bar-track"><div class="bar-fill" style="width:29.4%;background:#eda100"></div></div><span class="bar-val">139</span></div>
+        <div class="bar-row"><span class="bar-label">Doctor</span><div class="bar-track"><div class="bar-fill" style="width:9.1%;background:#e87ba4"></div></div><span class="bar-val">43</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-briefcase"></i>Headcount by job role</div>
+      <div class="bar-h">
+        <div class="bar-row"><span class="bar-label" style="font-size:10px">Sales Exec</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:#2a78d6"></div></div><span class="bar-val">269</span></div>
+        <div class="bar-row"><span class="bar-label" style="font-size:10px">Res. Scientist</span><div class="bar-track"><div class="bar-fill" style="width:91%;background:#2a78d6"></div></div><span class="bar-val">245</span></div>
+        <div class="bar-row"><span class="bar-label" style="font-size:10px">Lab Tech</span><div class="bar-track"><div class="bar-fill" style="width:73.2%;background:#1baf7a"></div></div><span class="bar-val">197</span></div>
+        <div class="bar-row"><span class="bar-label" style="font-size:10px">Mfg Director</span><div class="bar-track"><div class="bar-fill" style="width:50.2%;background:#1baf7a"></div></div><span class="bar-val">135</span></div>
+        <div class="bar-row"><span class="bar-label" style="font-size:10px">Healthcare Rep</span><div class="bar-track"><div class="bar-fill" style="width:45.4%;background:#eda100"></div></div><span class="bar-val">122</span></div>
+        <div class="bar-row"><span class="bar-label" style="font-size:10px">Manager</span><div class="bar-track"><div class="bar-fill" style="width:36.1%;background:#eda100"></div></div><span class="bar-val">97</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="charts-grid g2" style="margin-top:12px">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-users-group"></i>Age group distribution</div>
+      <div style="position:relative;height:180px"><canvas id="ageChart" role="img" aria-label="Age group distribution bar chart">Age groups from Under 20 to 60+</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-calendar-time"></i>Tenure bracket vs attrition</div>
+      <div class="bar-h" style="margin-top:4px">
+        <div class="bar-row"><span class="bar-label" style="font-size:10px">&lt;1 year</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:#e34948"></div></div><span class="bar-val" style="color:#f87171">38.9%</span></div>
+        <div class="bar-row"><span class="bar-label" style="font-size:10px">1–3 yrs</span><div class="bar-track"><div class="bar-fill" style="width:55.8%;background:#e34948"></div></div><span class="bar-val" style="color:#f87171">21.7%</span></div>
+        <div class="bar-row"><span class="bar-label" style="font-size:10px">3–5 yrs</span><div class="bar-track"><div class="bar-fill" style="width:33.4%;background:#eda100"></div></div><span class="bar-val" style="color:#fbbf24">13.0%</span></div>
+        <div class="bar-row"><span class="bar-label" style="font-size:10px">5–10 yrs</span><div class="bar-track"><div class="bar-fill" style="width:31.1%;background:#eda100"></div></div><span class="bar-val" style="color:#fbbf24">12.1%</span></div>
+        <div class="bar-row"><span class="bar-label" style="font-size:10px">10–15 yrs</span><div class="bar-track"><div class="bar-fill" style="width:23.7%;background:#1baf7a"></div></div><span class="bar-val" style="color:#4ade80">9.2%</span></div>
+        <div class="bar-row"><span class="bar-label" style="font-size:10px">15+ yrs</span><div class="bar-track"><div class="bar-fill" style="width:19.5%;background:#1baf7a"></div></div><span class="bar-val" style="color:#4ade80">7.6%</span></div>
+      </div>
+      <div class="insight">New joiners (&lt;1yr) leave at <strong>5× the rate</strong> of 15+ year employees</div>
+    </div>
+  </div>
+</div>
+
+<div id="page-attrition" class="page">
+  <div class="page-title"><i class="ti ti-trending-down"></i>Attrition & retention</div>
+  <div class="gauge-row">
+    <div class="gauge-card"><div class="gauge-label">Overall rate</div><div class="gauge-val" style="color:#f87171">19.2%</div><div class="gauge-track"><div class="gauge-fill" style="width:19.2%;background:#e34948"></div></div></div>
+    <div class="gauge-card"><div class="gauge-label">Sales rate</div><div class="gauge-val" style="color:#f87171">20.6%</div><div class="gauge-track"><div class="gauge-fill" style="width:20.6%;background:#e34948"></div></div></div>
+    <div class="gauge-card"><div class="gauge-label">HR rate</div><div class="gauge-val" style="color:#fbbf24">19.0%</div><div class="gauge-track"><div class="gauge-fill" style="width:19%;background:#eda100"></div></div></div>
+    <div class="gauge-card"><div class="gauge-label">R&D rate</div><div class="gauge-val" style="color:#4ade80">13.8%</div><div class="gauge-track"><div class="gauge-fill" style="width:13.8%;background:#1baf7a"></div></div></div>
+    <div class="gauge-card"><div class="gauge-label">Single employees</div><div class="gauge-val" style="color:#f87171">25.5%</div><div class="gauge-track"><div class="gauge-fill" style="width:25.5%;background:#e34948"></div></div></div>
+  </div>
+  <div class="charts-grid g2">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-plane"></i>Attrition by travel frequency</div>
+      <div class="bar-h">
+        <div class="bar-row"><span class="bar-label" style="font-size:10px">Freq. traveler</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:#e34948"></div></div><span class="bar-val" style="color:#f87171">24.9%</span></div>
+        <div class="bar-row"><span class="bar-label" style="font-size:10px">Rare traveler</span><div class="bar-track"><div class="bar-fill" style="width:60.2%;background:#eda100"></div></div><span class="bar-val" style="color:#fbbf24">15.0%</span></div>
+        <div class="bar-row"><span class="bar-label" style="font-size:10px">No travel</span><div class="bar-track"><div class="bar-fill" style="width:32.1%;background:#1baf7a"></div></div><span class="bar-val" style="color:#4ade80">8.0%</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-heart"></i>Attrition by marital status</div>
+      <div class="bar-h">
+        <div class="bar-row"><span class="bar-label">Single</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:#e34948"></div></div><span class="bar-val" style="color:#f87171">25.5%</span></div>
+        <div class="bar-row"><span class="bar-label">Married</span><div class="bar-track"><div class="bar-fill" style="width:49%;background:#eda100"></div></div><span class="bar-val" style="color:#fbbf24">12.5%</span></div>
+        <div class="bar-row"><span class="bar-label">Divorced</span><div class="bar-track"><div class="bar-fill" style="width:39.6%;background:#1baf7a"></div></div><span class="bar-val" style="color:#4ade80">10.1%</span></div>
+      </div>
+      <div class="insight">Single employees exit at <strong>2.5×</strong> the rate of divorced — fewer relocation anchors</div>
+    </div>
+  </div>
+  <div class="charts-grid" style="margin-top:12px">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-chart-bar"></i>Attrition rate by age group</div>
+      <div style="position:relative;height:160px"><canvas id="ageAttrChart" role="img" aria-label="Attrition rate by age group">Under 20: 58.8%, 20-30: 25.5%, 30-40: 14.6%, 40-50: 10.0%, 50-60: 13.7%, 60+: 0%</canvas></div>
+      <div class="insight" style="margin-top:8px">Under-20 cohort shows <strong>58.8%</strong> attrition — small group but a clear early-career signal</div>
+    </div>
+  </div>
+</div>
+
+<div id="page-satisfaction" class="page">
+  <div class="page-title"><i class="ti ti-mood-smile"></i>Satisfaction vs attrition — Layer 4</div>
+  <div class="charts-grid g2">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-star"></i>Job satisfaction → attrition rate</div>
+      <div class="bar-h">
+        <div class="bar-row"><span class="bar-label">Low</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:#e34948"></div></div><span class="bar-val" style="color:#f87171">22.8%</span></div>
+        <div class="bar-row"><span class="bar-label">High</span><div class="bar-track"><div class="bar-fill" style="width:72.4%;background:#eda100"></div></div><span class="bar-val" style="color:#fbbf24">16.5%</span></div>
+        <div class="bar-row"><span class="bar-label">Medium</span><div class="bar-track"><div class="bar-fill" style="width:71.9%;background:#eda100"></div></div><span class="bar-val" style="color:#fbbf24">16.4%</span></div>
+        <div class="bar-row"><span class="bar-label">Very High</span><div class="bar-track"><div class="bar-fill" style="width:49.6%;background:#1baf7a"></div></div><span class="bar-val" style="color:#4ade80">11.3%</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-scale"></i>Work-life balance → attrition rate</div>
+      <div class="bar-h">
+        <div class="bar-row"><span class="bar-label">Bad</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:#e34948"></div></div><span class="bar-val" style="color:#f87171">31.2%</span></div>
+        <div class="bar-row"><span class="bar-label">Good</span><div class="bar-track"><div class="bar-fill" style="width:54.2%;background:#eda100"></div></div><span class="bar-val" style="color:#fbbf24">16.9%</span></div>
+        <div class="bar-row"><span class="bar-label">Best</span><div class="bar-track"><div class="bar-fill" style="width:56.4%;background:#eda100"></div></div><span class="bar-val" style="color:#fbbf24">17.6%</span></div>
+        <div class="bar-row"><span class="bar-label">Better</span><div class="bar-track"><div class="bar-fill" style="width:45.5%;background:#1baf7a"></div></div><span class="bar-val" style="color:#4ade80">14.2%</span></div>
+      </div>
+      <div class="insight">Bad WLB → <strong>2.2× exit rate</strong> vs Better. The steepest single jump in the dataset</div>
+    </div>
+  </div>
+  <div class="charts-grid g2" style="margin-top:12px">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-building"></i>Environment satisfaction → attrition</div>
+      <div class="bar-h">
+        <div class="bar-row"><span class="bar-label">Low</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:#e34948"></div></div><span class="bar-val" style="color:#f87171">25.4%</span></div>
+        <div class="bar-row"><span class="bar-label">Medium</span><div class="bar-track"><div class="bar-fill" style="width:59.1%;background:#eda100"></div></div><span class="bar-val" style="color:#fbbf24">15.0%</span></div>
+        <div class="bar-row"><span class="bar-label">High</span><div class="bar-track"><div class="bar-fill" style="width:54%;background:#1baf7a"></div></div><span class="bar-val" style="color:#4ade80">13.7%</span></div>
+        <div class="bar-row"><span class="bar-label">Very High</span><div class="bar-track"><div class="bar-fill" style="width:53.1%;background:#1baf7a"></div></div><span class="bar-val" style="color:#4ade80">13.5%</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-flame"></i>Job involvement → attrition rate</div>
+      <div class="bar-h">
+        <div class="bar-row"><span class="bar-label">Low</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:#e34948"></div></div><span class="bar-val" style="color:#f87171">33.7%</span></div>
+        <div class="bar-row"><span class="bar-label">Medium</span><div class="bar-track"><div class="bar-fill" style="width:56%;background:#eda100"></div></div><span class="bar-val" style="color:#fbbf24">18.9%</span></div>
+        <div class="bar-row"><span class="bar-label">High</span><div class="bar-track"><div class="bar-fill" style="width:42.7%;background:#eda100"></div></div><span class="bar-val" style="color:#fbbf24">14.4%</span></div>
+        <div class="bar-row"><span class="bar-label">Very High</span><div class="bar-track"><div class="bar-fill" style="width:26.7%;background:#1baf7a"></div></div><span class="bar-val" style="color:#4ade80">9.0%</span></div>
+      </div>
+      <div class="insight"><strong>Strongest satisfaction predictor</strong> — Low involvement exits at 3.7× Very High involvement</div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div class="card-title"><i class="ti ti-table"></i>Dept × job satisfaction attrition matrix</div>
+    <div class="matrix-wrap">
+      <table class="matrix">
+        <thead><tr><th style="text-align:left">Department</th><th>Low sat.</th><th>Medium sat.</th><th>High sat.</th><th>Very high sat.</th></tr></thead>
+        <tbody>
+          <tr><td class="row-label">Human Resources</td><td class="heat-crit">45.5%</td><td class="heat-low">10.0%</td><td class="heat-mid">20.0%</td><td class="heat-low">11.8%</td></tr>
+          <tr><td class="row-label">Sales</td><td class="heat-high">26.7%</td><td class="heat-mid">23.3%</td><td class="heat-mid">21.3%</td><td class="heat-low">15.0%</td></tr>
+          <tr><td class="row-label">R&D</td><td class="heat-mid">19.8%</td><td class="heat-low">13.8%</td><td class="heat-low">14.3%</td><td class="heat-low">9.5%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <span class="danger-tag"><i class="ti ti-alert-triangle"></i>HR + Low: 45.5% — highest in company</span>
+      <span class="warn-tag"><i class="ti ti-info-circle"></i>Sales stays elevated even at Very High satisfaction (15.0%)</span>
+    </div>
+  </div>
+</div>
+
+<div id="page-performance" class="page">
+  <div class="page-title"><i class="ti ti-bolt"></i>Performance & overtime — Layer 5</div>
+  <div class="charts-grid g2">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-clock-hour-4"></i>Overtime impact on attrition</div>
+      <div class="stat-row">
+        <div class="stat-block"><div class="stat-big" style="color:#f87171">30.5%</div><div class="stat-lbl">With overtime</div></div>
+        <div style="font-size:28px;color:rgba(255,255,255,0.2);align-self:center">vs</div>
+        <div class="stat-block"><div class="stat-big" style="color:#4ade80">10.4%</div><div class="stat-lbl">Without overtime</div></div>
+      </div>
+      <div style="background:#1a2660;border-radius:8px;padding:12px;text-align:center">
+        <div style="font-size:32px;font-weight:500;color:#f87171">3×</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-top:2px">Attrition multiplier from overtime</div>
+      </div>
+      <div class="insight" style="margin-top:10px">Overtime is the <strong>single most powerful attrition driver</strong> — no satisfaction or pay variable comes close</div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-award"></i>Performance rating → attrition & hike</div>
+      <div class="bar-h">
+        <div class="bar-row"><span class="bar-label">Good</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:#e34948"></div></div><span class="bar-val" style="color:#f87171">40.6%</span></div>
+        <div class="bar-row"><span class="bar-label">Low</span><div class="bar-track"><div class="bar-fill" style="width:88.9%;background:#e34948"></div></div><span class="bar-val" style="color:#f87171">36.1%</span></div>
+        <div class="bar-row"><span class="bar-label">Outstanding</span><div class="bar-track"><div class="bar-fill" style="width:39.7%;background:#eda100"></div></div><span class="bar-val" style="color:#fbbf24">16.1%</span></div>
+        <div class="bar-row"><span class="bar-label">Excellent</span><div class="bar-track"><div class="bar-fill" style="width:29.6%;background:#1baf7a"></div></div><span class="bar-val" style="color:#4ade80">12.0%</span></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <span class="warn-tag"><i class="ti ti-coin"></i>Good/Low/Excellent all get ~14% hike</span>
+        <span class="danger-tag"><i class="ti ti-coin"></i>Outstanding alone gets 21.8%</span>
+      </div>
+      <div class="insight" style="margin-top:8px">Flat reward structure for 3 of 4 tiers — a <strong>retention leak hiding in plain sight</strong></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div class="card-title"><i class="ti ti-flame"></i>Burnout matrix — overtime × performance rating</div>
+    <div class="matrix-wrap">
+      <table class="matrix">
+        <thead><tr><th style="text-align:left">Overtime status</th><th>Excellent</th><th>Good</th><th>Low</th><th>Outstanding</th></tr></thead>
+        <tbody>
+          <tr><td class="row-label" style="color:#f87171"><i class="ti ti-alert-circle" style="font-size:12px;margin-right:4px"></i>With overtime</td><td class="heat-mid">22.8%</td><td class="heat-crit">60.5%</td><td class="heat-crit">60.0%</td><td class="heat-high">35.9%</td></tr>
+          <tr><td class="row-label" style="color:#4ade80"><i class="ti ti-check" style="font-size:12px;margin-right:4px"></i>No overtime</td><td class="heat-low">7.9%</td><td class="heat-high">30.6%</td><td class="heat-mid">24.4%</td><td class="heat-low">8.1%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:10px">
+      <span class="danger-tag"><i class="ti ti-alert-triangle"></i>OT + Good or Low performance = 60% attrition — 3 in 5 leave</span>
+    </div>
+    <div class="insight" style="margin-top:8px">These employees are being <strong>overworked without differentiated recognition</strong>. Highest-ROI retention fix in the dataset.</div>
+  </div>
+  <div class="charts-grid g2" style="margin-top:12px">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-user-star"></i>Manager tenure vs attrition</div>
+      <div class="bar-h">
+        <div class="bar-row"><span class="bar-label" style="font-size:10px">Stayers avg</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:#1baf7a"></div></div><span class="bar-val" style="color:#4ade80">4.25 yrs</span></div>
+        <div class="bar-row"><span class="bar-label" style="font-size:10px">Leavers avg</span><div class="bar-track"><div class="bar-fill" style="width:64.2%;background:#e34948"></div></div><span class="bar-val" style="color:#f87171">2.73 yrs</span></div>
+      </div>
+      <div class="insight" style="margin-top:8px">Manager relationship more predictive than promotion timing. Short tenure with manager = <strong>leading indicator</strong></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-calendar-stats"></i>Promotion lag vs attrition</div>
+      <div class="bar-h">
+        <div class="bar-row"><span class="bar-label" style="font-size:10px">Stayers avg</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:#1baf7a"></div></div><span class="bar-val" style="color:#4ade80">2.19 yrs</span></div>
+        <div class="bar-row"><span class="bar-label" style="font-size:10px">Leavers avg</span><div class="bar-track"><div class="bar-fill" style="width:83.1%;background:#eda100"></div></div><span class="bar-val" style="color:#fbbf24">1.82 yrs</span></div>
+      </div>
+      <div class="insight" style="margin-top:8px">Leavers were promoted <strong>more recently</strong> — rules out stagnation. Points to early-career disengagement post-promo</div>
+    </div>
+  </div>
+</div>
+
+<div id="page-compensation" class="page">
+  <div class="page-title"><i class="ti ti-currency-dollar"></i>Compensation analysis</div>
+  <div class="charts-grid g2">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-school"></i>Avg salary by education (active)</div>
+      <div class="bar-h">
+        <div class="bar-row"><span class="bar-label">Doctor</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:#4a3aa7"></div></div><span class="bar-val">$8,560</span></div>
+        <div class="bar-row"><span class="bar-label">Master</span><div class="bar-track"><div class="bar-fill" style="width:82.8%;background:#2a78d6"></div></div><span class="bar-val">$7,088</span></div>
+        <div class="bar-row"><span class="bar-label">Bachelor</span><div class="bar-track"><div class="bar-fill" style="width:80.4%;background:#2a78d6"></div></div><span class="bar-val">$6,883</span></div>
+        <div class="bar-row"><span class="bar-label">College</span><div class="bar-track"><div class="bar-fill" style="width:76.9%;background:#1baf7a"></div></div><span class="bar-val">$6,586</span></div>
+        <div class="bar-row"><span class="bar-label">Below Col.</span><div class="bar-track"><div class="bar-fill" style="width:69.2%;background:#eda100"></div></div><span class="bar-val">$5,926</span></div>
+      </div>
+      <div class="insight" style="margin-top:8px"><strong>Masters earn only 3% more than Bachelors</strong> — pay is role-based, not education-based</div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-building-community"></i>Avg salary by department</div>
+      <div class="bar-h">
+        <div class="bar-row"><span class="bar-label">HR</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:#e87ba4"></div></div><span class="bar-val">$7,346</span></div>
+        <div class="bar-row"><span class="bar-label">Sales</span><div class="bar-track"><div class="bar-fill" style="width:98.4%;background:#1baf7a"></div></div><span class="bar-val">$7,232</span></div>
+        <div class="bar-row"><span class="bar-label">R&D</span><div class="bar-track"><div class="bar-fill" style="width:90.3%;background:#2a78d6"></div></div><span class="bar-val">$6,630</span></div>
+      </div>
+      <div class="insight">R&D carries 67% of headcount but has the <strong>lowest avg salary</strong> of all three departments</div>
+    </div>
+  </div>
+  <div class="charts-grid g2" style="margin-top:12px">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-id-badge"></i>Avg salary by employment type</div>
+      <div style="display:flex;gap:16px;margin-top:8px">
+        <div style="flex:1;background:#1a2660;border-radius:8px;padding:16px;text-align:center">
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em">Contractor</div>
+          <div style="font-size:24px;font-weight:500;color:#eda100">$6,930</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:4px">205 employees</div>
+        </div>
+        <div style="flex:1;background:#1a2660;border-radius:8px;padding:16px;text-align:center">
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em">Full-time</div>
+          <div style="font-size:24px;font-weight:500;color:#2a78d6">$6,813</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:4px">1,028 employees</div>
+        </div>
+      </div>
+      <div class="insight" style="margin-top:10px">Contractors earn <strong>1.7% more</strong> on average — but at specific roles (e.g. Doctor), gap reaches <strong>64%</strong></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-chart-bar"></i>Salary hike by performance rating</div>
+      <div class="bar-h">
+        <div class="bar-row"><span class="bar-label">Outstanding</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:#1baf7a"></div></div><span class="bar-val" style="color:#4ade80">21.8%</span></div>
+        <div class="bar-row"><span class="bar-label">Good</span><div class="bar-track"><div class="bar-fill" style="width:65.1%;background:#eda100"></div></div><span class="bar-val" style="color:#fbbf24">14.2%</span></div>
+        <div class="bar-row"><span class="bar-label">Excellent</span><div class="bar-track"><div class="bar-fill" style="width:64.2%;background:#eda100"></div></div><span class="bar-val" style="color:#fbbf24">14.0%</span></div>
+        <div class="bar-row"><span class="bar-label">Low</span><div class="bar-track"><div class="bar-fill" style="width:64.2%;background:#e34948"></div></div><span class="bar-val" style="color:#f87171">14.0%</span></div>
+      </div>
+      <div class="insight" style="margin-top:6px">Good, Excellent and Low performers all receive <strong>identical hikes (~14%)</strong>. Only Outstanding is differentiated.</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+const gridColor = 'rgba(255,255,255,0.06)';
+const tickColor = 'rgba(255,255,255,0.35)';
+
+function donut(id, data, colors) {
+  const c = document.getElementById(id);
+  if (!c) return;
+  new Chart(c, {
+    type: 'doughnut',
+    data: { datasets: [{ data, backgroundColor: colors, borderWidth: 0, hoverOffset: 4 }] },
+    options: { responsive: false, cutout: '68%', plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+  });
+}
+
+donut('donutEmp', [1028, 205], ['#2a78d6', '#eda100']);
+donut('donutGender', [732, 501], ['#2a78d6', '#e87ba4']);
+
+new Chart(document.getElementById('ageChart'), {
+  type: 'bar',
+  data: {
+    labels: ['<20', '20–30', '30–40', '40–50', '50–60', '60+'],
+    datasets: [{ label: 'Employees', data: [17, 267, 519, 299, 121, 10], backgroundColor: '#2a78d6', borderRadius: 4, borderSkipped: false }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + ctx.raw + ' employees' } } },
+    scales: {
+      x: { ticks: { color: tickColor, font: { size: 10 } }, grid: { display: false }, border: { display: false } },
+      y: { ticks: { color: tickColor, font: { size: 10 } }, grid: { color: gridColor }, border: { display: false } }
+    }
+  }
+});
+
+new Chart(document.getElementById('ageAttrChart'), {
+  type: 'bar',
+  data: {
+    labels: ['<20', '20–30', '30–40', '40–50', '50–60', '60+'],
+    datasets: [{ label: 'Attrition %', data: [58.8, 25.5, 14.6, 10.0, 13.7, 0.0], backgroundColor: ['#e34948','#e34948','#eda100','#1baf7a','#eda100','#1baf7a'], borderRadius: 4, borderSkipped: false }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + ctx.raw + '%' } } },
+    scales: {
+      x: { ticks: { color: tickColor, font: { size: 10 } }, grid: { display: false }, border: { display: false } },
+      y: { ticks: { color: tickColor, font: { size: 10 }, callback: v => v + '%' }, grid: { color: gridColor }, border: { display: false }, max: 70 }
+    }
+  }
+});
+</script>

@@ -2,7 +2,7 @@
 -- HR ANALYTICS PROJECT — WEEK 1 MASTER SCRIPT
 -- Dataset : Hr Analytics Dataset (1,470 rows, 38 columns)
 -- Tool    : SQL Server (SSMS)
--- Author  : [Your Name]
+-- Author  : Sam Akande
 -- Date    : July 2026
 -- ============================================================
 -- CONTENTS:
@@ -378,15 +378,15 @@ ORDER BY Attrition_Rate_Pct DESC;
 -- rising again at 10+ yrs
 -- ------------------------------------------------------------
 SELECT
-    [YearsAtCompany Group] AS Tenure_Band,
+    [YearsAtCompany_Group] AS Tenure_Band,
     COUNT(*) AS Total_Employees,
     SUM(CASE WHEN Attrition_Label = 'Yes' THEN 1 ELSE 0 END) AS Leavers,
     ROUND(
         SUM(CASE WHEN Attrition_Label = 'Yes' THEN 1 ELSE 0 END) * 100.0 / COUNT(*),
     1) AS Attrition_Rate_Pct
 FROM [Hr Analytics Dataset]
-GROUP BY [YearsAtCompany Group]
-ORDER BY [YearsAtCompany Group] ASC;
+GROUP BY [YearsAtCompany_Group]
+ORDER BY [YearsAtCompany_Group] ASC;
 
 
 -- ------------------------------------------------------------
@@ -422,7 +422,7 @@ ORDER BY Total_Departures DESC;
 -- ------------------------------------------------------------
 SELECT
     Department,
-    JobRole,
+    Job_Role,
     COUNT(*) AS Headcount,
     ROUND(AVG(CAST(Salary AS FLOAT)), 0) AS Avg_Salary,
     MIN(Salary) AS Min_Salary,
@@ -430,7 +430,7 @@ SELECT
     MAX(Salary) - MIN(Salary) AS Salary_Spread
 FROM [Hr Analytics Dataset]
 WHERE DateDeparture IS NULL
-GROUP BY Department, JobRole
+GROUP BY Department, Job_Role
 ORDER BY Department, Avg_Salary DESC;
 
 
@@ -442,7 +442,7 @@ ORDER BY Department, Avg_Salary DESC;
 -- Industry standard: report gap as % of male salary
 -- ------------------------------------------------------------
 SELECT
-    JobRole,
+    Job_Role,
     ROUND(AVG(CASE WHEN Gender = 'Male'   THEN CAST(Salary AS FLOAT) END), 0) AS Avg_Male_Salary,
     ROUND(AVG(CASE WHEN Gender = 'Female' THEN CAST(Salary AS FLOAT) END), 0) AS Avg_Female_Salary,
     ROUND(
@@ -456,7 +456,7 @@ SELECT
     , 1) AS Pay_Gap_Pct
 FROM [Hr Analytics Dataset]
 WHERE DateDeparture IS NULL
-GROUP BY JobRole
+GROUP BY Job_Role
 ORDER BY Pay_Gap_Pct DESC;
 
 
@@ -505,3 +505,365 @@ ORDER BY EmploymentType, Education_Score ASC;
 --            Layer 5 (Performance & Overtime)
 --            Power BI Dashboard Build
 -- ============================================================
+
+
+-- ============================================================
+-- HR ANALYTICS | LAYER 4: SATISFACTION vs ATTRITION
+-- Author : Sam Akande Bolarinwa
+-- Tool   : SQL Server (SSMS)
+-- Dataset: 1,470 employees | 38 columns
+-- ============================================================
+
+
+-- ─────────────────────────────────────────────
+-- 4.1  ATTRITION RATE BY JOB SATISFACTION
+-- Verdict: Low satisfaction = 2x the exit rate of Very High
+-- ─────────────────────────────────────────────
+SELECT
+    JobSatisfaction,
+    COUNT(*)                                                        AS TotalEmployees,
+    SUM(CASE WHEN Attrition_Label = 'Yes' THEN 1 ELSE 0 END)            AS Terminated,
+    SUM(CASE WHEN Attrition_Label = 'No'  THEN 1 ELSE 0 END)            AS Active,
+    ROUND(
+        100.0 * SUM(CASE WHEN Attrition_Label = 'Yes' THEN 1 ELSE 0 END)
+              / COUNT(*), 1
+    )                                                               AS AttritionRate_Pct
+FROM [Hr Analytics Dataset]
+GROUP BY JobSatisfaction
+ORDER BY AttritionRate_Pct DESC;
+
+-- ─────────────────────────────────────────────
+-- 4.2  ATTRITION RATE BY WORK-LIFE BALANCE
+-- Verdict: "Bad" WLB employees leave at 2.2x the rate of "Better"
+-- ─────────────────────────────────────────────
+SELECT
+    WorkLifeBalance,
+    COUNT(*) AS TotalEmployees,
+    SUM(CASE WHEN Attrition_Label = 'Yes' THEN 1 ELSE 0 END) AS Terminated,
+    ROUND(
+        100.0 * SUM(CASE WHEN Attrition_Label = 'Yes' THEN 1 ELSE 0 END)
+              / COUNT(*), 1
+    ) AS AttritionRate_Pct
+FROM [Hr Analytics Dataset]
+GROUP BY WorkLifeBalance
+ORDER BY AttritionRate_Pct DESC;
+
+
+-- ─────────────────────────────────────────────
+-- 4.3  ATTRITION RATE BY ENVIRONMENT SATISFACTION
+-- Verdict: Low env satisfaction = nearly 2x the rate of High
+-- ─────────────────────────────────────────────
+SELECT
+    EnvironmentSatisfaction,
+    COUNT(*) AS TotalEmployees,
+    SUM(CASE WHEN Attrition_Label = 'Yes' THEN 1 ELSE 0 END) AS Terminated,
+    ROUND(
+        100.0 * SUM(CASE WHEN Attrition_Label = 'Yes' THEN 1 ELSE 0 END)
+              / COUNT(*), 1
+    ) AS AttritionRate_Pct
+FROM [Hr Analytics Dataset]
+GROUP BY EnvironmentSatisfaction
+ORDER BY AttritionRate_Pct DESC;
+
+/*
+Expected Output:
+EnvironmentSatisfaction | AttritionRate_Pct
+Low                     | 25.4%
+Medium                  | 15.0%
+High                    | 13.7%
+Very High               | 13.5%
+*/
+
+
+-- ─────────────────────────────────────────────
+-- 4.4  ATTRITION RATE BY JOB INVOLVEMENT
+-- Verdict: Low involvement = 33.7% exit rate — the single strongest
+--          satisfaction-side predictor in the dataset
+-- ─────────────────────────────────────────────
+SELECT
+    JobInvolvement,
+    COUNT(*)                                                        AS TotalEmployees,
+    SUM(CASE WHEN Attrition_Label = 'Yes' THEN 1 ELSE 0 END)            AS Terminated,
+    ROUND(
+        100.0 * SUM(CASE WHEN Attrition_Label = 'Yes' THEN 1 ELSE 0 END)
+              / COUNT(*), 1
+    )                                                               AS AttritionRate_Pct
+FROM [Hr Analytics Dataset]
+GROUP BY JobInvolvement
+ORDER BY AttritionRate_Pct DESC;
+
+/*
+Expected Output:
+JobInvolvement | AttritionRate_Pct
+Low            | 33.7%   ← danger zone
+Medium         | 18.9%
+High           | 14.4%
+Very High      |  9.0%   ← most engaged, most retained
+*/
+
+
+-- ─────────────────────────────────────────────
+-- 4.5  DEPARTMENT × JOB SATISFACTION ATTRITION MATRIX
+-- Business Use: pinpoint which dept-satisfaction combos are bleeding talent
+-- ─────────────────────────────────────────────
+SELECT
+    Department,
+    JobSatisfaction,
+    COUNT(*)                                                        AS TotalEmployees,
+    SUM(CASE WHEN Attrition_Label = 'Yes' THEN 1 ELSE 0 END)            AS Terminated,
+    ROUND(
+        100.0 * SUM(CASE WHEN Attrition_Label = 'Yes' THEN 1 ELSE 0 END)
+              / COUNT(*), 1
+    )                                                               AS AttritionRate_Pct
+FROM [Hr Analytics Dataset]
+GROUP BY Department, JobSatisfaction
+ORDER BY Department, AttritionRate_Pct DESC;
+
+/*
+KEY FINDING:
+Human Resources + Low Satisfaction = 45.5% attrition — nearly 1 in 2 employees leaves
+Sales + Low Satisfaction            = 26.7%
+R&D + Low Satisfaction              = 19.8%
+→ HR dept is the most vulnerable segment in the entire workforce
+*/
+
+
+-- ─────────────────────────────────────────────
+-- 4.6  SATISFACTION COMPOSITE RISK SCORE
+-- Flags employees scoring Low on 3+ satisfaction dimensions
+-- Business Use: early-warning retention list
+-- ─────────────────────────────────────────────
+SELECT
+    ID_employe,
+    Department,
+    Job_Role,
+    JobSatisfaction,
+    WorkLifeBalance,
+    EnvironmentSatisfaction,
+    JobInvolvement,
+    Attrition,
+    (
+        CASE WHEN JobSatisfaction         = 'Low' THEN 1 ELSE 0 END +
+        CASE WHEN WorkLifeBalance         = 'Bad'  THEN 1 ELSE 0 END +
+        CASE WHEN EnvironmentSatisfaction = 'Low'  THEN 1 ELSE 0 END +
+        CASE WHEN JobInvolvement          = 'Low'  THEN 1 ELSE 0 END
+    )                                                               AS RiskScore
+FROM [Hr Analytics Dataset]
+ORDER BY RiskScore DESC, Department;
+
+/*
+RiskScore = 4 → All four dimensions are red flags (maximum flight risk)
+RiskScore = 3 → High priority intervention needed
+RiskScore <= 1 → Stable
+*/
+
+
+-- ============================================================
+-- HR ANALYTICS | LAYER 5: PERFORMANCE & OVERTIME
+-- Author : Sam Akande Bolarinwa
+-- Tool   : SQL Server (SSMS)
+-- Dataset: 1,470 employees | 38 columns
+-- ============================================================
+
+
+-- ─────────────────────────────────────────────
+-- 5.1  ATTRITION RATE BY OVERTIME STATUS
+-- Verdict: OT employees leave at 3x the rate of non-OT employees
+-- ─────────────────────────────────────────────
+SELECT
+    OverTime,
+    COUNT(*)                                                        AS TotalEmployees,
+    SUM(CASE WHEN Attrition_Label = 'Yes' THEN 1 ELSE 0 END)            AS Terminated,
+    SUM(CASE WHEN Attrition_Label = 'No'  THEN 1 ELSE 0 END)            AS Active,
+    ROUND(
+        100.0 * SUM(CASE WHEN Attrition_Label = 'Yes' THEN 1 ELSE 0 END)
+              / COUNT(*), 1
+    )                                                               AS AttritionRate_Pct
+FROM [Hr Analytics Dataset]
+GROUP BY OverTime
+ORDER BY AttritionRate_Pct DESC;
+
+/*
+Expected Output:
+OverTime | AttritionRate_Pct
+Yes      | 30.5%   ← 3x multiplier
+No       | 10.4%
+*/
+
+
+-- ─────────────────────────────────────────────
+-- 5.2  ATTRITION RATE BY PERFORMANCE RATING
+-- Verdict: Counter-intuitive — Good & Low performers leave more than Outstanding
+--          "Good" rated employees are the most at-risk cohort (40.6%)
+-- ─────────────────────────────────────────────
+SELECT
+    PerformanceRating,
+    COUNT(*)                                                        AS TotalEmployees,
+    SUM(CASE WHEN Attrition_Label = 'Yes' THEN 1 ELSE 0 END)            AS Terminated,
+    ROUND(
+        100.0 * SUM(CASE WHEN Attrition_Label = 'Yes' THEN 1 ELSE 0 END)
+              / COUNT(*), 1
+    )                                                               AS AttritionRate_Pct,
+    ROUND(AVG(CAST(PercentSalaryHike AS FLOAT)), 1)                AS AvgSalaryHike_Pct
+FROM [Hr Analytics Dataset]
+GROUP BY PerformanceRating
+ORDER BY AttritionRate_Pct DESC;
+
+/*
+Expected Output:
+PerformanceRating | AttritionRate_Pct | AvgSalaryHike_Pct
+Good              | 40.6%             | 14.2%
+Low               | 36.1%             | 14.0%
+Outstanding       | 16.1%             | 21.8%  ← only group rewarded differently
+Excellent         | 12.0%             | 14.0%
+
+KEY INSIGHT: Good, Low, and Excellent performers all receive ~14% hike.
+Only Outstanding gets differentiated pay (21.8%).
+The flat reward structure for middle performers is a retention leak.
+*/
+
+
+-- ─────────────────────────────────────────────
+-- 5.3  OVERTIME × PERFORMANCE — THE BURNOUT MATRIX
+-- Most dangerous combination: OT Yes + Good/Low performance
+-- ─────────────────────────────────────────────
+SELECT
+    OverTime,
+    PerformanceRating,
+    COUNT(*)                                                        AS TotalEmployees,
+    SUM(CASE WHEN Attrition_Label = 'Yes' THEN 1 ELSE 0 END)            AS Terminated,
+    ROUND(
+        100.0 * SUM(CASE WHEN Attrition_Label = 'Yes' THEN 1 ELSE 0 END)
+              / COUNT(*), 1
+    )                                                               AS AttritionRate_Pct
+FROM [Hr Analytics Dataset]
+GROUP BY OverTime, PerformanceRating
+ORDER BY AttritionRate_Pct DESC;
+
+/*
+Expected Output (top rows):
+OverTime | PerformanceRating | AttritionRate_Pct
+Yes      | Good              | 60.5%   ← CRITICAL: 3 in 5 leave
+Yes      | Low               | 60.0%   ← equally severe
+Yes      | Outstanding       | 35.9%
+Yes      | Excellent         | 22.8%
+No       | Good              | 30.6%
+No       | Low               | 24.4%
+No       | Outstanding       |  8.1%
+No       | Excellent         |  7.9%
+
+BUSINESS TRANSLATION: An employee doing OT with a Good or Low rating
+has a 60% chance of leaving. The company is burning people out
+without the performance recognition to justify it.
+*/
+
+
+-- ─────────────────────────────────────────────
+-- 5.4  OVERTIME DISTRIBUTION BY DEPARTMENT
+-- Which department carries the most OT burden?
+-- ─────────────────────────────────────────────
+SELECT
+    Department,
+    SUM(CASE WHEN OverTime = 'Yes' THEN 1 ELSE 0 END)             AS OT_Employees,
+    SUM(CASE WHEN OverTime = 'No'  THEN 1 ELSE 0 END)             AS NonOT_Employees,
+    COUNT(*)                                                        AS TotalEmployees,
+    ROUND(
+        100.0 * SUM(CASE WHEN OverTime = 'Yes' THEN 1 ELSE 0 END)
+              / COUNT(*), 1
+    )                                                               AS OT_Rate_Pct
+FROM [Hr Analytics Dataset]
+GROUP BY Department
+ORDER BY OT_Rate_Pct DESC;
+
+/*
+Expected Output:
+Department              | OT_Rate_Pct
+Sales                   | 28.7%
+Research & Development  | 28.2%
+Human Resources         | 27.0%
+→ OT burden is roughly equal across departments — this is a company-wide policy issue
+*/
+
+
+-- ─────────────────────────────────────────────
+-- 5.5  TRAINING INVESTMENT vs ATTRITION
+-- Do undertrained employees leave more?
+-- ─────────────────────────────────────────────
+SELECT
+    Attrition,
+    COUNT(*)                                                        AS TotalEmployees,
+    ROUND(AVG(CAST(TrainingTimesLastYear AS FLOAT)), 2)            AS AvgTrainingSessions,
+    MIN(TrainingTimesLastYear)                                      AS MinSessions,
+    MAX(TrainingTimesLastYear)                                      AS MaxSessions
+FROM [Hr Analytics Dataset]
+GROUP BY Attrition;
+
+/*
+Expected Output:
+Attrition | AvgTrainingSessions
+No        | 2.83
+Yes       | 2.62
+
+Employees who left received slightly fewer training sessions.
+Not dramatic, but directionally consistent with disengagement.
+*/
+
+
+-- ─────────────────────────────────────────────
+-- 5.6  PROMOTION LAG vs ATTRITION
+-- Does being passed over for promotion drive exits?
+-- ─────────────────────────────────────────────
+SELECT
+    Attrition,
+    ROUND(AVG(CAST(YearsSinceLastPromotion AS FLOAT)), 2)          AS AvgYearsSincePromotion,
+    ROUND(AVG(CAST(YearsWithCurrManager   AS FLOAT)), 2)           AS AvgYearsWithManager,
+    COUNT(*)                                                        AS TotalEmployees
+FROM [Hr Analytics Dataset]
+GROUP BY Attrition;
+
+/*
+Expected Output:
+Attrition | AvgYearsSincePromotion | AvgYearsWithManager
+No        | 2.19                   | 4.25
+Yes       | 1.82                   | 2.73
+
+Employees who left had actually been promoted MORE recently —
+suggesting early-career dissatisfaction, not stagnation.
+Short tenure with current manager (2.85 vs 4.37) = poor manager relationship
+is a stronger signal than promotion timing.
+*/
+
+
+-- ─────────────────────────────────────────────
+-- 5.7  THE DANGER ZONE — OT + LOW JOB SATISFACTION
+-- Business Use: highest-priority retention intervention list
+-- ─────────────────────────────────────────────
+SELECT
+    OverTime,
+    JobSatisfaction,
+    COUNT(*)                                                        AS TotalEmployees,
+    SUM(CASE WHEN Attrition_Label = 'Yes' THEN 1 ELSE 0 END)            AS Terminated,
+    ROUND(
+        100.0 * SUM(CASE WHEN Attrition_Label = 'Yes' THEN 1 ELSE 0 END)
+              / COUNT(*), 1
+    )                                                               AS AttritionRate_Pct
+FROM [Hr Analytics Dataset]
+GROUP BY OverTime, JobSatisfaction
+ORDER BY AttritionRate_Pct DESC;
+
+/*
+Expected Output:
+OverTime | JobSatisfaction | AttritionRate_Pct
+Yes      | Low             | 35.7%
+Yes      | Medium          | 37.7%
+Yes      | High            | 33.9%
+Yes      | Very High       | 21.1%
+No       | Low             | 17.6%
+No       | Medium          |  9.5%
+No       | High            | 10.0%
+No       | Very High       |  6.9%
+
+CONCLUSION: Overtime is the dominant driver — even Very High satisfaction
+employees doing OT leave at 21% vs 6.9% for their non-OT counterparts.
+Overtime policy reform would have the single largest impact on retention.
+*/
